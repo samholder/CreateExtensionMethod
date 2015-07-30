@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Sam.CreateExtensionMethod</id>
+    <version>0.2.0.0</version>
+    <title>Create Extension Method</title>
+    <authors>Sam Holder</authors>
+    <description>plugin which allows extension methods to be created.</description>
+    <copyright>Copyright &#x00A9; Sam Holder</copyright>
+    <tags>Extension method methods creation</tags>
+    <dependencies>
+      <dependency id="Wave" version="[2.0]" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="bin\Debug\CreateExtensionMethod.dll" target="dotFiles\" />
+  </files>
+</package>
