@@ -30,6 +30,7 @@ namespace CreateExtensionMethod
         protected override Action<ITextControl> ExecutePsiTransaction(ISolution solution, IProgressIndicator progress)
         {
             var treeNode = error.Reference.GetTreeNode();
+            
             var unresolvedThing = treeNode as IReferenceExpression;
             if (unresolvedThing == null)
             {
@@ -42,11 +43,14 @@ namespace CreateExtensionMethod
             }
             
             var qualifierElement = unresolvedThingsQualifier.Reference.Resolve().DeclaredElement;
-            var qualifierElementType = qualifierElement.Type();
+            var qualifierElementType = qualifierElement.Type(); 
+
             if (qualifierElementType == null)
             {
                 return null;
             }
+
+            var extensionMethodReturnType = GetExtensionMethodReturnType(unresolvedThing);
             var classDeclaration = unresolvedThing.GetContainingTypeDeclaration();
             var nameSpaceDeclaration = unresolvedThing.GetContainingNamespaceDeclaration();
             if (classDeclaration == null || nameSpaceDeclaration == null)
@@ -56,12 +60,26 @@ namespace CreateExtensionMethod
             var factory = CSharpElementFactory.GetInstance(treeNode.GetPsiModule());
             var presentableName = qualifierElementType.GetPresentableName(CSharpLanguage.Instance);
             var newClass = (IClassDeclaration)factory.CreateTypeMemberDeclaration("public static class $0Extensions{}",presentableName);
-            var newMethod = (IClassMemberDeclaration)factory.CreateTypeMemberDeclaration("public static void $0 (this $1 $2){}", error.Reference.GetName(), presentableName, WithFirstLetterLowerCase(presentableName));
+            string basicMethodDeclaration = string.Format("public static {0} $0 (this $1 $2){{}}", extensionMethodReturnType);
+            var newMethod = (IClassMemberDeclaration)factory.CreateTypeMemberDeclaration(basicMethodDeclaration, error.Reference.GetName(), presentableName, WithFirstLetterLowerCase(presentableName));
             newClass.AddClassMemberDeclaration(newMethod);
             
             nameSpaceDeclaration.AddTypeDeclarationAfter(newClass, classDeclaration);
             
             return null;
+        }
+
+        private static string GetExtensionMethodReturnType(IReferenceExpression unresolvedThing)
+        {
+            string extensionMethodReturnType = "void";
+            var localVariable = unresolvedThing.Parent.Parent.Parent as ILocalVariableDeclaration;
+            if (localVariable != null)
+            {
+                var variableType = localVariable.TypeUsage as IPredefinedTypeUsage;
+                var varType = variableType.ScalarPredefinedTypeName.TypeKeyword;
+                extensionMethodReturnType = varType.GetText();
+            }
+            return extensionMethodReturnType;
         }
 
         private static string WithFirstLetterLowerCase(string presentableName)
